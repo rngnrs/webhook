@@ -40,12 +40,21 @@ function respondOnSecret(req, chunk) {
 }
 
 function executeCommand() {
+  let datetime = new Date().toLocaleString();
+  console.log(`[${datetime}] Executing ${cmd}...`);
+
   exec(cmd, (error, stdout, stderr) => {
+    let datetime = new Date().toLocaleString();
     if (error) {
+      console.log(`[${datetime}] Failed to execute command:`);
       console.error(`error: ${error}`);
       return;
     }
-    console.log(`stdout: ${stdout}`);
+    if (!stderr) {
+      console.log(`[${datetime}] Success.`);
+      return;
+    }
+    console.log(`[${datetime}] Fail:`);
     console.error(`stderr: ${stderr}`);
   });
 }
