@@ -1,6 +1,8 @@
 # webhook [Name subject to change]
 #### tiny server tool for automatic repo pulls
 
+![webhook in a nutshell](.github/nutshell.png)
+
 ## Description
 This app is designed as a simple [webhook](https://en.wikipedia.org/wiki/Webhook) service.
 It allows you to automatically respond to code changes on many git platforms that support webhooks, such as:
