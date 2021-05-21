@@ -28,7 +28,7 @@ const preHook = process.env.PRE_HOOK;
 const hook = process.env.HOOK || 'git pull';
 const postHook = process.env.POST_HOOK;
 
-let cmd = [`cd ${repo}`, preHook, hook, postHook].join(' && ');
+let cmd = [`cd ${repo}`, preHook, hook, postHook].filter(Boolean).join(' && ');
 
 function respondOnSecret(req, chunk) {
   let sig = "sha1=" + crypto.createHmac('sha1', secret).update(chunk.toString()).digest('hex');
