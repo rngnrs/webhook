@@ -1,44 +1,60 @@
-let dotenv = require('dotenv').config();
+const http = require('http');
+const crypto = require('crypto');
+const { exec } = require('child_process');
+
+let config;
 
 try {
-  if (dotenv.error && !['HOST','PORT','REPO'].some(key => Object.keys(process.env).includes(key))) {
-    throw dotenv.error;
-  }
+  config = require('./config.json');
 } catch (err) {
   if (err.code === 'ENOENT') {
-    console.error('Please create `./.env` based on the `./env.example` or define environment variables.');
+    console.error('Please create `./config.json`');
     return;
   }
   console.log(err);
   console.error('Unexpected error. Usually this should not happen. Report this!');
 }
 
-const http = require('http');
-const crypto = require('crypto');
-const { exec } = require('child_process');
+const { host, port, hooks } = config;
 
-// Required params
-const host = process.env.HOST || '127.0.0.1';
-const port = process.env.PORT || 56709;
-const repo = process.env.REPO || './';
+http.createServer((req, res) => {
+  let data = '';
+  req.on('data', chunk => data += chunk);
+  req.on('end', () => processRequest(req, data));
+  res.end();
+}).listen(port, host, () => {
+  console.log(`Webhook has been planted.\nhttp://${host}:${port}`);
+});
 
-// Optional
-const secret = process.env.SECRET;
-const preHook = process.env.PRE_HOOK;
-const hook = process.env.HOOK || 'git pull';
-const postHook = process.env.POST_HOOK;
-
-let cmd = [`cd ${repo}`, preHook, hook, postHook].filter(Boolean).join(' && ');
-
-function respondOnSecret(req, chunk) {
-  let sig = "sha1=" + crypto.createHmac('sha1', secret).update(chunk.toString()).digest('hex');
-
-  if (req.headers['x-hub-signature'] === sig) {
-    return executeCommand();
+function processRequest(req, data) {
+  let { cmd, secret } = processEvent(data);
+  if (checkSecret(req, data, secret)) {
+    executeCommand(cmd);
   }
 }
 
-function executeCommand() {
+function processEvent(data) {
+  try {
+    data = JSON.parse(data);
+    return hooks.find(h => (h.user === data.user) && (h.repo === data.repo) && (h.event === data.event));
+  } catch (e) {
+    console.error('JSON parsing error');
+  }
+}
+
+function checkSecret(req, data, secret) {
+  if (!req.headers['x-hub-signature']) {
+    return true;
+  }
+  if (!secret) {
+    console.error('Secret is not set');
+    return false;
+  }
+  let sig = "sha1=" + crypto.createHmac('sha1', secret).update(data.toString()).digest('hex');
+  return req.headers['x-hub-signature'] === sig;
+}
+
+function executeCommand(cmd) {
   let datetime = new Date().toLocaleString();
   console.log(`[${datetime}] Executing ${cmd}...`);
 
@@ -57,24 +73,3 @@ function executeCommand() {
     console.error(`stderr: ${stderr}`);
   });
 }
-
-http.createServer((req, res) => {
-  if (secret) {
-    req.on('data', chunk => respondOnSecret(req, chunk));
-  } else {
-    req.on('data', executeCommand);
-  }
-  res.end();
-}).listen(port, host, () => {
-  console.log(`
-  Webhook has been planted.
-  From now on, a request to http://${host}:${port}
-  ` + (secret
-    ? `with the secret "${secret}"`
-    : `without any secret (shame on you!!1)`) +
-    ` will execute this:
-
-      ${cmd}
-
-  `);
-});

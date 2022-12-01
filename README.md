@@ -1,8 +1,6 @@
 # webhook [Name subject to change]
 #### tiny server tool for automatic repo pulls
 
-![webhook in a nutshell](.github/nutshell.png)
-
 ## Description
 This app is designed as a simple [webhook](https://en.wikipedia.org/wiki/Webhook) service.
 It allows you to automatically respond to code changes on many git platforms that support webhooks, such as:
@@ -15,7 +13,7 @@ It allows you to automatically respond to code changes on many git platforms tha
 
 ## Prerequisites
 - Node.js (LTS version or later)
-- npm/yarn
+- npm/yarn/pnpm
 - [optional] [pm2](https://github.com/Unitech/pm2)
 
 ## Installation
@@ -24,30 +22,25 @@ It allows you to automatically respond to code changes on many git platforms tha
 ```shell script
 git clone https://github.com/rngnrs/webhook
 cd webhook
-npm i # or `yarn install`
+pnpm i
 ```
 
 #### Setting environment variables
-Create `.env` file:
+Create `config.json` file:
 ```shell script
-cp .env.example .env
+cp config.json.example config.json
 # ...edit .env as you wish...
-```
-Or just use plain variables:
-```shell script
-PORT=8080 REPO=/var/www/awoo node app 
+node app 
 ```
 #### Usage
-- Run script directly (choose one):
+- Run script directly:
 ```shell script
-npm run start
-yarn start
-node app
+pnpm start
 ```
 - [pm2] Use `pm2`:
 ```shell script
 pm2 start app.js --name awoo-webhook
 ```
-- [systemd] Use self-made services.
+- [systemd] Use self-made services:
 
 Read your system manual.
