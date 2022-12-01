@@ -29,7 +29,7 @@ pnpm i
 Create `config.json` file:
 ```shell script
 cp config.json.example config.json
-# ...edit .env as you wish...
+# ...edit config.json as you wish...
 node app 
 ```
 #### Usage

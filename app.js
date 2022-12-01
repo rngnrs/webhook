@@ -28,6 +28,10 @@ http.createServer((req, res) => {
 
 function processRequest(req, data) {
   let { cmd, secret } = processEvent(data);
+  if (!cmd) {
+    console.error('No command to execute');
+    return;
+  }
   if (checkSecret(req, data, secret)) {
     executeCommand(cmd);
   }
@@ -39,6 +43,7 @@ function processEvent(data) {
     return hooks.find(h => (h.user === data.user) && (h.repo === data.repo) && (h.event === data.event));
   } catch (e) {
     console.error('JSON parsing error');
+    return {};
   }
 }
 
