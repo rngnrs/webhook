@@ -2,6 +2,7 @@ const http = require('http');
 const crypto = require('crypto');
 const { exec } = require('child_process');
 
+const { getEventByData } = require('./events.js');
 let config;
 
 try {
@@ -27,20 +28,42 @@ http.createServer((req, res) => {
 });
 
 function processRequest(req, data) {
-  let { cmd, secret } = processEvent(data);
-  if (!cmd) {
-    console.error('No command to execute');
-    return;
-  }
-  if (checkSecret(req, data, secret)) {
-    executeCommand(cmd);
+  let repoHooks = getHooksForEvent(data);
+  for (let { cmd, secret } of repoHooks) {
+    if (!cmd) {
+      console.error('No command to execute');
+      return;
+    }
+    if (checkSecret(req, data, secret)) {
+      executeCommand(cmd);
+    }
   }
 }
 
-function processEvent(data) {
+function getHooksForEvent(data) {
   try {
     data = JSON.parse(data);
-    return hooks.find(h => (h.user === data.user) && (h.repo === data.repo) && (h.event === data.event));
+    let event = getEventByData(data);
+    if (!event) {
+      console.error('No event!');
+      return;
+    }
+    let repository = data.repository?.full_name;
+    if (!repository) {
+      console.error('No repo!');
+      return;
+    }
+    let [user, repo] = repository.split('/');
+    let repoHooks = hooks.filter(hook => {
+      return hook.user === user
+        && hook.repo === repo
+        && hook.event === event
+        && (hook.branch || "master") === data.ref;
+    });
+    if (!repoHooks) {
+      console.log(`No repo hooks for event ${event}`);
+    }
+    return repoHooks;
   } catch (e) {
     console.error('JSON parsing error');
     return {};
