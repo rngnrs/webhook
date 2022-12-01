@@ -55,18 +55,21 @@ function getHooksForEvent(data) {
     }
     let [user, repo] = repository.split('/');
     let repoHooks = hooks.filter(hook => {
-      return hook.user === user
+      let sameRepoAndEvent = hook.user === user
         && hook.repo === repo
-        && hook.event === event
-        && (hook.branch || "master") === data.ref;
+        && hook.event === event;
+      let sameBranch = data.ref
+          ? (hook.branch || "master") === data.ref.replace('refs/heads/', '')
+          : true;
+      return sameRepoAndEvent && sameBranch;
     });
-    if (!repoHooks) {
-      console.log(`No repo hooks for event ${event}`);
+    if (!repoHooks.length) {
+      console.log(`No hooks for event ${event} of ${repository}`);
     }
     return repoHooks;
   } catch (e) {
-    console.error('JSON parsing error');
-    return {};
+    console.error('No parsable payload');
+    return [];
   }
 }
 

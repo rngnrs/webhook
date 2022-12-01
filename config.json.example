@@ -6,6 +6,7 @@
       "user": "rngnrs",
       "repo": "webhook",
       "event": "push",
+      "branch": "master",
       "cmd": "git checkout . && git pull"
     },
     {
