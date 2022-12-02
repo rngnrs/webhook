@@ -82,15 +82,19 @@ function getHooksForEvent(data) {
 }
 
 function checkSecret(req, data, secret) {
-  if (!req.headers['x-hub-signature']) {
-    return true;
+  if (!secret && !req.headers['x-hub-signature']) {
+    return true; // Nothing to do.
   }
-  if (!secret) {
+  if (secret && req.headers['x-hub-signature']) {
+    let sig = "sha1=" + crypto.createHmac('sha1', secret).update(data.toString()).digest('hex');
+    return req.headers['x-hub-signature'] === sig;
+  }
+  if (!secret && req.headers['x-hub-signature']) {
     console.error('Secret is not set');
     return false;
   }
-  let sig = "sha1=" + crypto.createHmac('sha1', secret).update(data.toString()).digest('hex');
-  return req.headers['x-hub-signature'] === sig;
+  console.error('Header "x-hub-signature" is not set');
+  return false;
 }
 
 async function executeCommand(cmd) {
