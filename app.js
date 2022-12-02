@@ -21,23 +21,31 @@ const { host, port, hooks } = config;
 http.createServer((req, res) => {
   let data = '';
   req.on('data', chunk => data += chunk);
-  req.on('end', () => processRequest(req, data));
-  res.end();
+  req.on('end', async () => await processRequest(req, data, callback));
+  function callback(success) {
+    res.writeHead(success ? 200 : 500);
+    res.end();
+  }
 }).listen(port, host, () => {
   console.log(`Webhook has been planted.\nhttp://${host}:${port}`);
 });
 
-function processRequest(req, data) {
+async function processRequest(req, data, callback) {
   let repoHooks = getHooksForEvent(data);
-  for (let { cmd, secret } of repoHooks) {
+  if (!repoHooks.length) {
+    return callback(true); // Nothing to do.
+  }
+  let results = [];
+  for (const { cmd, secret } of repoHooks) {
     if (!cmd) {
       console.error('No command to execute');
       return;
     }
     if (checkSecret(req, data, secret)) {
-      executeCommand(cmd);
+      results[results.length] = await executeCommand(cmd);
     }
   }
+  callback(results.length && results.every(result => result === true));
 }
 
 function getHooksForEvent(data) {
@@ -85,22 +93,20 @@ function checkSecret(req, data, secret) {
   return req.headers['x-hub-signature'] === sig;
 }
 
-function executeCommand(cmd) {
-  let datetime = new Date().toLocaleString();
-  console.log(`[${datetime}] Executing ${cmd}...`);
-
-  exec(cmd, (error, stdout, stderr) => {
+async function executeCommand(cmd) {
+  return new Promise((resolve) => {
     let datetime = new Date().toLocaleString();
-    if (error) {
-      console.log(`[${datetime}] Failed to execute command:`);
-      console.error(`error: ${error}`);
-      return;
-    }
-    if (!stderr) {
+    console.log(`[${datetime}] Executing ${cmd}...`);
+
+    exec(cmd, (error, stdout, stderr) => {
+      let datetime = new Date().toLocaleString();
+      if (error) {
+        console.log(`[${datetime}] Failed to execute command:`);
+        console.error(`error: ${error}`);
+        return resolve(false);
+      }
       console.log(`[${datetime}] Success.`);
-      return;
-    }
-    console.log(`[${datetime}] Fail:`);
-    console.error(`stderr: ${stderr}`);
-  });
+      return resolve(true);
+    });
+  })
 }
