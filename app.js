@@ -1,6 +1,7 @@
 const http = require('http');
 const crypto = require('crypto');
 const { exec } = require('child_process');
+const { leftSideDeepCompare } = require('./utils');
 
 const { getEventByData } = require('./events.js');
 let config;
@@ -69,7 +70,10 @@ function getHooksForEvent(data) {
       let sameBranch = data.ref
           ? (hook.branch || "master") === data.ref.replace('refs/heads/', '')
           : true;
-      return sameRepoAndEvent && sameBranch;
+      const blueprintMatches = undefined !== hook.blueprint
+          ? leftSideDeepCompare(hook.blueprint, data)
+          : true;
+      return sameRepoAndEvent && sameBranch && blueprintMatches;
     });
     if (!repoHooks.length) {
       console.log(`No hooks for event ${event} of ${repository}`);
