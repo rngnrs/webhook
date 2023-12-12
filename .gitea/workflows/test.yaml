@@ -8,16 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20, 21]
+        node-version:
+          - 20
+          - 21
     name: Test on Node #(20) - node-version will be substituted by Gitea
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
 
       # Monkey code for Node 20+
       # See https://github.com/nektos/act/issues/1995
@@ -38,8 +35,14 @@ jobs:
 #          version: "8.12" # It is a string, not a float, lol
 #          run_install: false
 
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Test
         run: pnpm test
