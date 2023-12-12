@@ -1,0 +1,45 @@
+name: Test
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 21]
+    name: Test on Node #(20) - node-version will be substituted by Gitea
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # Monkey code for Node 20+
+      # See https://github.com/nektos/act/issues/1995
+      - name: Install PNPM with some magic of monkey code
+        if: ${{ env.ACT }}
+        run: |
+          npm i -g pnpm@^8.12.0
+          pnpm setup
+          source /root/.bashrc
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "PNPM_HOME=$PNPM_HOME" >> $GITHUB_ENV
+        env:
+          SHELL: bash
+
+#      - name: Install pnpm
+#        uses: pnpm/action-setup@v2
+#        with:
+#          version: "8.12" # It is a string, not a float, lol
+#          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Test
+        run: pnpm test
