@@ -13,8 +13,10 @@
       "user": "BakaSolutions",
       "repo": "foxtan",
       "event": "push",
-      "cmd": "./update-foxtan.sh",
-      "secret": "S3CR37"
+      "cmd": "cd /var/www/foxtan && ./update-foxtan.sh",
+      "secret": "S3CR37",
+      "onsuccess": "cd /var/www/foxtan && ./notify-success.sh",
+      "onfail": "cd /var/www/foxtan && ./notify-fail.sh"
     },
     {
       "user": "username",
@@ -25,7 +27,8 @@
           "conclusion": "success"
         }
       },
-      "cmd": "echo Workflow run has succeeded"
+      "cmd": "echo Workflow run has succeeded",
+      "onsuccess": "echo Workflow run has succeeded | mail -s 'Workflow success' username@localhost"
     }
   ]
 }

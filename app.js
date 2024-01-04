@@ -1,7 +1,6 @@
-const http = require('http');
-const crypto = require('crypto');
-const { exec } = require('child_process');
-const { leftSideDeepCompare } = require('./utils');
+const http = require('node:http');
+const crypto = require('node:crypto');
+const { executeCommand, leftSideDeepCompare } = require('./utils');
 
 const { getEventByData } = require('./events.js');
 let config;
@@ -37,13 +36,13 @@ async function processRequest(req, data, callback) {
     return callback(true); // Nothing to do.
   }
   let results = [];
-  for (const { cmd, secret } of repoHooks) {
+  for (const { cmd, secret, onsuccess, onfail } of repoHooks) {
     if (!cmd) {
       console.error('No command to execute');
       return;
     }
     if (checkSecret(req, data, secret)) {
-      results[results.length] = await executeCommand(cmd);
+      results[results.length] = await executeCommand(cmd, onsuccess, onfail);
     }
   }
   callback(results.length && results.every(result => result === true));
@@ -101,20 +100,4 @@ function checkSecret(req, data, secret) {
   return false;
 }
 
-async function executeCommand(cmd) {
-  return new Promise((resolve) => {
-    let datetime = new Date().toLocaleString();
-    console.log(`[${datetime}] Executing ${cmd}...`);
 
-    exec(cmd, (error, stdout, stderr) => {
-      let datetime = new Date().toLocaleString();
-      if (error) {
-        console.log(`[${datetime}] Failed to execute command:`);
-        console.error(`error: ${error}`);
-        return resolve(false);
-      }
-      console.log(`[${datetime}] Success.`);
-      return resolve(true);
-    });
-  })
-}

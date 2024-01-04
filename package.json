@@ -1,11 +1,12 @@
 {
   "name": "webhook",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Tiny server tool for automatic repo pulls",
   "main": "app.js",
   "scripts": {
-    "start": "node app",
+    "start": "node app.js",
     "test": "jest",
+    "test:dev": "jest --watch",
     "coverage": "jest --coverage"
   },
   "keywords": [],
